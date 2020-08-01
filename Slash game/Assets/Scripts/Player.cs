@@ -21,9 +21,30 @@ public class Player : MonoBehaviour
     private Vector3 externalForce = Vector3.zero;
     [SerializeField] Text lifeText;
 
+    private Vector3 vertical, horizontal, rightVertical, rightHorizontal;
+
+    [SerializeField] private ScoreGameManager gameManager;
+    private bool isFury = false;
+    [SerializeField] AirBullet[] airBullets;
+    private int airBulletIndex = 0;
+    [SerializeField] Transform bulletPoint;
+
+    [SerializeField] private AirBullet bulletPrefab;
+    private Queue<AirBullet> airShots = new Queue<AirBullet>();
+
+    private bool isDead = false;
+    [SerializeField] private Collider myCollider;
+
     // Start is called before the first frame update
     void Start()
     {
+        vertical = Camera.main.transform.forward;
+        vertical.y = 0;
+        vertical = Vector3.ProjectOnPlane(vertical, Vector3.up).normalized;
+
+        horizontal = Camera.main.transform.right;
+        horizontal = Vector3.ProjectOnPlane(horizontal, Vector3.up).normalized;
+
         direction = Vector3.zero;
         lifeText.text = currentHealth.ToString("0");
     }
@@ -41,31 +62,81 @@ public class Player : MonoBehaviour
         CheckIdleOrWalk();
     }
 
+    //public AirBullet GetBullet()
+    //{
+    //    if(airShots.Count == 0)
+    //    {
+    //        AddShots(1);
+    //    }
+
+    //    return airShots.Dequeue();
+    //}
+
+    //private void AddShots(int count)
+    //{
+    //    for(int i = 0; i < count; i++)
+    //    {
+    //        AirBullet airBullet = Instantiate(bulletPrefab);
+    //        airBullet.gameObject.SetActive(false);
+    //        airShots.Enqueue(airBullet);
+    //    }
+    //}
+
+    //public void ReturnToPool(AirBullet airBullet)
+    //{
+    //    airBullet.gameObject.SetActive(false);
+    //    airShots.Enqueue(airBullet);
+    //}
+
     private void CheckInput()
     {
-        if (swipeControls.SwipeLeft)
+        if(isDead == false)
         {
-            m_playerWeapon.CallWeaponAttack();
-            m_animatorWrapper.AttackTrigger();
-            direction = Vector3.left;
-        }
-        else if (swipeControls.SwipeRight)
-        {
-            m_playerWeapon.CallWeaponAttack();
-            m_animatorWrapper.AttackTrigger();
-            direction = Vector3.right;
-        }
-        else if (swipeControls.SwipeUp)
-        {
-            m_playerWeapon.CallWeaponAttack();
-            m_animatorWrapper.AttackTrigger();
-            direction = Vector3.forward;
-        }
-        else if (swipeControls.SwipeDown)
-        {
-            m_playerWeapon.CallWeaponAttack();
-            m_animatorWrapper.AttackTrigger();
-            direction = Vector3.back;
+            if (swipeControls.SwipeLeft || Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                m_playerWeapon.CallWeaponAttack();
+                m_animatorWrapper.AttackTrigger();
+                //direction = Vector3.left;
+                direction = -horizontal;
+                if (isFury)
+                {
+                    StartCoroutine(ShootAirBullet());
+                }
+            }
+            else if (swipeControls.SwipeRight || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                m_playerWeapon.CallWeaponAttack();
+                m_animatorWrapper.AttackTrigger();
+                //direction = Vector3.right;
+                direction = horizontal;
+                if (isFury)
+                {
+                    StartCoroutine(ShootAirBullet());
+                }
+            }
+            else if (swipeControls.SwipeUp || Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                m_playerWeapon.CallWeaponAttack();
+                m_animatorWrapper.AttackTrigger();
+                //direction = Vector3.forward;
+                direction = vertical;
+                if (isFury)
+                {
+                    StartCoroutine(ShootAirBullet());
+                }
+            }
+            else if (swipeControls.SwipeDown || Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                m_playerWeapon.CallWeaponAttack();
+                m_animatorWrapper.AttackTrigger();
+                //direction = Vector3.back;
+                direction = -vertical;
+                if (isFury)
+                {
+                    StartCoroutine(ShootAirBullet());
+                }
+            }
+
         }
 
         //if (swipeControls.SwipeDelta.magnitude > 125 && Input.mousePosition == swipeControls.SavedMousePosition)
@@ -88,6 +159,7 @@ public class Player : MonoBehaviour
     {
         if (direction != Vector3.zero) transform.forward = direction;
 
+        //externalForce.y = 0;
         rb.velocity = externalForce + direction * moveSpeed;
     }
 
@@ -98,12 +170,17 @@ public class Player : MonoBehaviour
         {
             currentHealth -= damage;
             lifeText.text = currentHealth.ToString("0");
+            gameManager.ComboBreak();
             m_animatorWrapper.TakeDamageTrigger();
             externalForce += impactValue;
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
             {
                 m_animatorWrapper.DeathTrigger();
+                myCollider.enabled = false;
+                isDead = true;
+                currentHealth = 0;
+                lifeText.text = currentHealth.ToString("0");
                 //die
             }
         }
@@ -111,7 +188,8 @@ public class Player : MonoBehaviour
 
     public void CreateImpact(Vector3 impactValue)
     {
-        if (Time.time - lastDamageTime > 0.15f) externalForce += impactValue;
+        impactValue.y = 0;
+        if (Time.time - lastDamageTime > 1f) externalForce += impactValue;
     }
 
     private void ResetForces()
@@ -131,5 +209,21 @@ public class Player : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.DrawRay(transform.position, transform.forward * 0.8f);
+    }
+
+    public void ChangeFury(bool active, float bonusHealth)
+    {
+        isFury = active;
+        currentHealth += bonusHealth;
+    }
+
+    IEnumerator ShootAirBullet()
+    {
+        yield return 0;
+        airBullets[airBulletIndex].transform.position = bulletPoint.position;
+        airBullets[airBulletIndex].transform.rotation = bulletPoint.rotation;
+        airBullets[airBulletIndex].gameObject.SetActive(true);
+        airBulletIndex++;
+        if (airBulletIndex == airBullets.Length - 1) airBulletIndex = 0;
     }
 }

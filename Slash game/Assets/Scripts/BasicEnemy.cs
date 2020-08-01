@@ -13,6 +13,7 @@ public class BasicEnemy : MonoBehaviour
     [SerializeField] private float damage = 1;
 
     [SerializeField] private float currentHealth = 3;
+    [SerializeField] private float maxHealth = 3;
     float lastDamageTime = Mathf.NegativeInfinity;
     private Vector3 externalForce = Vector3.zero;
 
@@ -23,6 +24,8 @@ public class BasicEnemy : MonoBehaviour
 
     [SerializeField] private Animator m_animator;
 
+    [SerializeField] private ScoreGameManager gameManager;
+
     private void Start()
     {
         rb.velocity = externalForce + transform.forward * moveSpeed;
@@ -31,6 +34,15 @@ public class BasicEnemy : MonoBehaviour
     private void OnEnable()
     {
         rb.velocity = externalForce + transform.forward * moveSpeed;
+        Reborn();
+    }
+
+    public void Reborn()
+    {
+        dead = false;
+        currentHealth = maxHealth;
+        m_collider.enabled = true;
+        m_animator.SetTrigger("reborn");
     }
 
     void Update()
@@ -61,14 +73,18 @@ public class BasicEnemy : MonoBehaviour
         if (collision.gameObject.tag.Contains("Wall"))
         {
             Bounce(collision.contacts[0].normal);
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
         }
         else if (collision.gameObject.tag.Contains("Player"))
         {
             Bounce(collision.contacts[0].normal);
             collision.gameObject.GetComponent<Player>().TakeDamage(damage, (collision.gameObject.transform.position - transform.position).normalized * impactIntensity);
 
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
+        }
+        else if (collision.gameObject.tag.Contains("Enemy"))
+        {
+            Bounce(collision.contacts[0].normal);
         }
         else
         {
@@ -84,6 +100,11 @@ public class BasicEnemy : MonoBehaviour
             PlayerWeapon weapon = other.gameObject.GetComponent<PlayerWeapon>();
             TakeDamage(weapon.M_damage, (transform.position - other.gameObject.GetComponent<PlayerWeapon>().M_player.transform.position).normalized * weapon.ImpactIntensity);
         }
+        else if (other.gameObject.tag.Contains("AirBullet"))
+        {
+            AirBullet bullet = other.gameObject.GetComponent<AirBullet>();
+            TakeDamage(bullet.M_damage, (transform.position - other.gameObject.transform.position).normalized * bullet.ImpactIntensity);
+        }
     }
 
     private void Bounce(Vector3 collisionNormal)
@@ -98,7 +119,7 @@ public class BasicEnemy : MonoBehaviour
         {
             Debug.Log("tomei dnao");
             currentHealth -= damage;
-            m_animator.SetTrigger("takeDamage");
+            if(currentHealth > 0) m_animator.SetTrigger("takeDamage");
             externalForce += ImpactValue;
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
@@ -106,6 +127,9 @@ public class BasicEnemy : MonoBehaviour
                 dead = true;
                 m_collider.enabled = false;
                 m_animator.SetTrigger("death");
+
+                gameManager.AddScore();
+                gameManager.RespawnEnemy(this);
                 //die
             }
         }

@@ -15,7 +15,8 @@ public class EnemyChaser : MonoBehaviour
 
     [SerializeField] private float damage = 1;
 
-    [SerializeField] private float currentHealth = 3;
+    [SerializeField] private float currentHealth = 1;
+    [SerializeField] private float maxHealth = 1;
     float lastDamageTime = Mathf.NegativeInfinity;
     private Vector3 externalForce = Vector3.zero;
 
@@ -24,6 +25,8 @@ public class EnemyChaser : MonoBehaviour
     [SerializeField] private Animator m_animator;
     [SerializeField] private Collider m_collider;
     [SerializeField] private float impactIntensity;
+
+    [SerializeField] private ScoreGameManager gameManager;
 
     // Use this for initialization
     void Start()
@@ -41,7 +44,7 @@ public class EnemyChaser : MonoBehaviour
                 Berserk();
                 break;
             case (EnemyStates.Dead):
-                Dead();
+                //Dead();
                 break;
         }
     }
@@ -51,10 +54,22 @@ public class EnemyChaser : MonoBehaviour
         ResetForces();
     }
 
+    public void Reborn()
+    {
+        Debug.Log("renasci");
+        currentHealth = maxHealth;
+        m_collider.enabled = true;
+        m_animator.SetTrigger("reborn");
+        zStates = EnemyStates.Berserk;
+    }
+
     void Dead()
     {
+        zStates = EnemyStates.Dead;
         m_collider.enabled = false;
         m_animator.SetTrigger("death");
+        gameManager.AddScore();
+        gameManager.RespawnEnemy(this);
     }
 
     void Idle()
@@ -66,10 +81,15 @@ public class EnemyChaser : MonoBehaviour
         Vector3 dir = m_player.transform.position - transform.position;
         //agent.SetDestination(m_player.transform.position);
 
-        if(Vector3.Distance(transform.position, m_player.transform.position) > 1)
+        if (Vector3.Distance(transform.position, m_player.transform.position) > 1)
         {
             rb.velocity = externalForce + transform.forward * moveSpeed;
-            transform.LookAt(m_player.transform.position);
+
+            Vector3 target;
+            target.x = m_player.transform.position.x;
+            target.z = m_player.transform.position.z;
+            target.y = transform.position.y;
+            transform.LookAt(target);
         }
     }
 
@@ -79,13 +99,13 @@ public class EnemyChaser : MonoBehaviour
         {
             Debug.Log("tomei dnao");
             currentHealth -= damage;
-            m_animator.SetTrigger("takeDamage");
+            if (currentHealth > 0) m_animator.SetTrigger("takeDamage");
             externalForce += ImpactValue;
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
             {
                 //die
-                zStates = EnemyStates.Dead;
+                Dead();
             }
         }
     }
@@ -96,12 +116,12 @@ public class EnemyChaser : MonoBehaviour
         {
             collision.gameObject.GetComponent<Player>().TakeDamage(damage, (collision.gameObject.transform.position - transform.position).normalized * impactIntensity);
 
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
         }
         else
         {
-            Debug.Log("colisor não rotulado: " + collision.gameObject.name, collision.gameObject);
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colisor não rotulado: " + collision.gameObject.name, collision.gameObject);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
         }
     }
 
@@ -111,12 +131,12 @@ public class EnemyChaser : MonoBehaviour
         {
             collision.gameObject.GetComponent<Player>().TakeDamage(damage, (collision.gameObject.transform.position - transform.position).normalized * impactIntensity);
 
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
         }
         else
         {
-            Debug.Log("colisor não rotulado: " + collision.gameObject.name, collision.gameObject);
-            Debug.Log("colidiu com : " + collision.gameObject.name);
+            //Debug.Log("colisor não rotulado: " + collision.gameObject.name, collision.gameObject);
+            //Debug.Log("colidiu com : " + collision.gameObject.name);
         }
     }
 
@@ -127,6 +147,11 @@ public class EnemyChaser : MonoBehaviour
         {
             PlayerWeapon weapon = other.gameObject.GetComponent<PlayerWeapon>();
             TakeDamage(weapon.M_damage, (transform.position - other.gameObject.GetComponent<PlayerWeapon>().M_player.transform.position).normalized * weapon.ImpactIntensity);
+        }
+        else if (other.gameObject.tag.Contains("AirBullet"))
+        {
+            AirBullet bullet = other.gameObject.GetComponent<AirBullet>();
+            TakeDamage(bullet.M_damage, (transform.position - other.gameObject.transform.position).normalized * bullet.ImpactIntensity);
         }
     }
 
