@@ -21,7 +21,7 @@ public class AirBullet : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        cooldownToDisappear = cooldownToDisappearOriginal;
+        ResetTiming();
     }
 
     // Update is called once per frame
@@ -44,6 +44,11 @@ public class AirBullet : MonoBehaviour
     public void WhoIsThePlayer(Player player)
     {
         this.player = player;
+    }
+
+    public void ResetTiming()
+    {
+        cooldownToDisappear = cooldownToDisappearOriginal;
     }
 
     //private void OnEnable()

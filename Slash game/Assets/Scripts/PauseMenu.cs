@@ -10,10 +10,14 @@ public class PauseMenu : MonoBehaviour
 
     [SerializeField] private GameObject pauseMenuUI;
 
+    [SerializeField] private Text countdownToResume;
+    private float countdownValue;
+    [SerializeField] private float countdownValueOriginal;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -23,13 +27,25 @@ public class PauseMenu : MonoBehaviour
         {
             PauseButton();
         }
+
+        //if (isCountingDown)
+        //{
+        //    countdownToResume.text = countdownValue.ToString("0");
+
+        //    if (countdownValue <= 0)
+        //    {
+        //        isCountingDown = false;
+        //        Resume();
+        //    }
+        //}
+
     }
 
     public void PauseButton()
     {
         if (gameIsPaused)
         {
-            Resume();
+            StartCoroutine(StartCountDown());
         }
         else
         {
@@ -43,9 +59,10 @@ public class PauseMenu : MonoBehaviour
         Resume();
     }
 
-    public void QuitButton()
+    public void ReturnToMenu()
     {
-        Application.Quit();
+        SceneManager.LoadScene("Menu");
+        Resume();
     }
 
     void Resume()
@@ -53,11 +70,32 @@ public class PauseMenu : MonoBehaviour
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1f;
         gameIsPaused = false;
+        countdownToResume.gameObject.SetActive(false);
     }
     void Pause()
     {
         pauseMenuUI.SetActive(true);
         Time.timeScale = 0f;
         gameIsPaused = true;
+    }
+
+    IEnumerator StartCountDown()
+    {
+        countdownValue = countdownValueOriginal;
+        pauseMenuUI.SetActive(false);
+        countdownToResume.gameObject.SetActive(true);
+        countdownToResume.text = countdownValue.ToString("0");
+        countdownValue--;
+        yield return new WaitForSecondsRealtime(1f);
+        countdownToResume.text = countdownValue.ToString("0");
+        countdownValue--;
+        yield return new WaitForSecondsRealtime(1f);
+        countdownToResume.text = countdownValue.ToString("0");
+        countdownValue--;
+        yield return new WaitForSecondsRealtime(1f);
+        countdownToResume.text = countdownValue.ToString("0");
+        countdownValue--;
+        yield return new WaitForSecondsRealtime(0.1f);
+        Resume();
     }
 }

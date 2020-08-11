@@ -54,6 +54,11 @@ public class EnemyChaser : MonoBehaviour
         ResetForces();
     }
 
+    private void OnEnable()
+    {
+        Reborn();
+    }
+
     public void Reborn()
     {
         Debug.Log("renasci");

@@ -23,6 +23,7 @@ public class Player : MonoBehaviour
 
     private Vector3 vertical, horizontal, rightVertical, rightHorizontal;
 
+    [SerializeField] private Transform spawnPoint;
     [SerializeField] private ScoreGameManager gameManager;
     private bool isFury = false;
     [SerializeField] AirBullet[] airBullets;
@@ -34,6 +35,8 @@ public class Player : MonoBehaviour
 
     private bool isDead = false;
     [SerializeField] private Collider myCollider;
+
+    private bool firstInput;
 
     // Start is called before the first frame update
     void Start()
@@ -52,7 +55,11 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CheckInput();
+        if (PauseMenu.gameIsPaused == false && isDead == false)
+        {
+            CheckInput();
+        }
+
         Move();
         ResetForces();
     }
@@ -90,53 +97,39 @@ public class Player : MonoBehaviour
 
     private void CheckInput()
     {
-        if(isDead == false)
+        if (swipeControls.SwipeLeft || swipeControls.SwipeRight || swipeControls.SwipeUp || swipeControls.SwipeDown || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow))
         {
-            if (swipeControls.SwipeLeft || Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                m_playerWeapon.CallWeaponAttack();
-                m_animatorWrapper.AttackTrigger();
-                //direction = Vector3.left;
-                direction = -horizontal;
-                if (isFury)
-                {
-                    StartCoroutine(ShootAirBullet());
-                }
-            }
-            else if (swipeControls.SwipeRight || Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                m_playerWeapon.CallWeaponAttack();
-                m_animatorWrapper.AttackTrigger();
-                //direction = Vector3.right;
-                direction = horizontal;
-                if (isFury)
-                {
-                    StartCoroutine(ShootAirBullet());
-                }
-            }
-            else if (swipeControls.SwipeUp || Input.GetKeyDown(KeyCode.UpArrow))
-            {
-                m_playerWeapon.CallWeaponAttack();
-                m_animatorWrapper.AttackTrigger();
-                //direction = Vector3.forward;
-                direction = vertical;
-                if (isFury)
-                {
-                    StartCoroutine(ShootAirBullet());
-                }
-            }
-            else if (swipeControls.SwipeDown || Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                m_playerWeapon.CallWeaponAttack();
-                m_animatorWrapper.AttackTrigger();
-                //direction = Vector3.back;
-                direction = -vertical;
-                if (isFury)
-                {
-                    StartCoroutine(ShootAirBullet());
-                }
-            }
+            if (firstInput == false) gameManager.StartGameplay();
+            firstInput = true;
 
+            m_playerWeapon.CallWeaponAttack();
+            m_animatorWrapper.AttackTrigger();
+
+            if (isFury)
+            {
+                StartCoroutine(ShootAirBullet());
+            }
+        }
+
+        if (swipeControls.SwipeLeft || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            //direction = Vector3.left;
+            direction = -horizontal;
+        }
+        else if (swipeControls.SwipeRight || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            //direction = Vector3.right;
+            direction = horizontal;
+        }
+        else if (swipeControls.SwipeUp || Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            //direction = Vector3.forward;
+            direction = vertical;
+        }
+        else if (swipeControls.SwipeDown || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            //direction = Vector3.back;
+            direction = -vertical;
         }
 
         //if (swipeControls.SwipeDelta.magnitude > 125 && Input.mousePosition == swipeControls.SavedMousePosition)
@@ -152,7 +145,7 @@ public class Player : MonoBehaviour
         }
 
 
-        if (Input.GetKeyDown(KeyCode.F)) TakeDamage(1, Vector3.zero);
+        if (Input.GetKeyDown(KeyCode.F)) TakeDamage(20, Vector3.zero);
     }
 
     private void Move()
@@ -171,7 +164,7 @@ public class Player : MonoBehaviour
             currentHealth -= damage;
             lifeText.text = currentHealth.ToString("0");
             gameManager.ComboBreak();
-            m_animatorWrapper.TakeDamageTrigger();
+            if(currentHealth > 0) m_animatorWrapper.TakeDamageTrigger();
             externalForce += impactValue;
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
@@ -181,9 +174,24 @@ public class Player : MonoBehaviour
                 isDead = true;
                 currentHealth = 0;
                 lifeText.text = currentHealth.ToString("0");
+
+                gameManager.EnableContinueScreen();
+
                 //die
             }
         }
+    }
+
+    public void Revive()
+    {
+        myCollider.enabled = true;
+        isDead = false;
+        currentHealth = 20;
+        lifeText.text = currentHealth.ToString("0");
+        transform.position = spawnPoint.position;
+        transform.rotation = spawnPoint.rotation;
+        direction = Vector3.zero;
+        m_animatorWrapper.ReviveTrigger();
     }
 
     public void CreateImpact(Vector3 impactValue)
@@ -203,7 +211,7 @@ public class Player : MonoBehaviour
         {
             m_animatorWrapper.IsRunning = false;
         }
-        else if(direction != Vector3.zero) m_animatorWrapper.IsRunning = true;
+        else if (direction != Vector3.zero) m_animatorWrapper.IsRunning = true;
     }
 
     private void OnDrawGizmos()
@@ -222,6 +230,7 @@ public class Player : MonoBehaviour
         yield return 0;
         airBullets[airBulletIndex].transform.position = bulletPoint.position;
         airBullets[airBulletIndex].transform.rotation = bulletPoint.rotation;
+        airBullets[airBulletIndex].ResetTiming();
         airBullets[airBulletIndex].gameObject.SetActive(true);
         airBulletIndex++;
         if (airBulletIndex == airBullets.Length - 1) airBulletIndex = 0;
