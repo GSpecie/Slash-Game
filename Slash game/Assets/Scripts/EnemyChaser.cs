@@ -5,7 +5,7 @@ using UnityEngine;
 public class EnemyChaser : MonoBehaviour
 {
     public enum EnemyStates { Idle, Berserk, Dead };
-    public EnemyStates zStates;
+    public EnemyStates eStates;
 
     //GameObject brain;
     //[SerializeField] private NavMeshAgent agent;
@@ -21,6 +21,7 @@ public class EnemyChaser : MonoBehaviour
     private Vector3 externalForce = Vector3.zero;
 
     [SerializeField] private float moveSpeed = 2;
+    private float moveSpeedStored;
 
     [SerializeField] private Animator m_animator;
     [SerializeField] private Collider m_collider;
@@ -31,11 +32,11 @@ public class EnemyChaser : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        zStates = EnemyStates.Berserk;
+        eStates = EnemyStates.Berserk;
     }
     private void FixedUpdate()
     {
-        switch (zStates)
+        switch (eStates)
         {
             case (EnemyStates.Idle):
                 Idle();
@@ -65,12 +66,23 @@ public class EnemyChaser : MonoBehaviour
         currentHealth = maxHealth;
         m_collider.enabled = true;
         m_animator.SetTrigger("reborn");
-        zStates = EnemyStates.Berserk;
+        moveSpeedStored = moveSpeed;
+        moveSpeed = 0f;
+        StartCoroutine(WakeUp());
+
+    }
+
+    IEnumerator WakeUp()
+    {
+        yield return new WaitForSeconds(0.5f);
+        moveSpeed = moveSpeedStored;
+        eStates = EnemyStates.Berserk;
+
     }
 
     void Dead()
     {
-        zStates = EnemyStates.Dead;
+        eStates = EnemyStates.Dead;
         m_collider.enabled = false;
         m_animator.SetTrigger("death");
         gameManager.AddScore();
@@ -106,6 +118,8 @@ public class EnemyChaser : MonoBehaviour
             currentHealth -= damage;
             if (currentHealth > 0) m_animator.SetTrigger("takeDamage");
             externalForce += ImpactValue;
+            gameManager.StopTime(0.25f, 10, 0f);
+            StartCoroutine(gameManager.CamShake(0.05f));
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
             {

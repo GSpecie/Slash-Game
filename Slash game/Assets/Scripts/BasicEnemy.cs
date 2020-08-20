@@ -10,6 +10,7 @@ public class BasicEnemy : MonoBehaviour
     private Vector3 direction;
 
     [SerializeField] private float moveSpeed = 2;
+    private float moveSpeedStored;
     [SerializeField] private float damage = 1;
 
     [SerializeField] private float currentHealth = 3;
@@ -33,16 +34,28 @@ public class BasicEnemy : MonoBehaviour
 
     private void OnEnable()
     {
-        rb.velocity = externalForce + transform.forward * moveSpeed;
         Reborn();
+        //rb.velocity = externalForce + transform.forward * moveSpeed;
     }
 
     public void Reborn()
     {
+        velocityLastFrameBeforeHit = Vector3.zero;
+        externalForce = Vector3.zero;
+        direction = Vector3.zero;
         dead = false;
         currentHealth = maxHealth;
         m_collider.enabled = true;
+        moveSpeedStored = moveSpeed;
+        moveSpeed = 0f;
         m_animator.SetTrigger("reborn");
+        StartCoroutine(WakeUp());
+    }
+
+    IEnumerator WakeUp()
+    {
+        yield return new WaitForSeconds(0.5f);
+        moveSpeed = moveSpeedStored;
     }
 
     void Update()
@@ -61,7 +74,7 @@ public class BasicEnemy : MonoBehaviour
 
     private void Move()
     {
-        if(direction == Vector3.zero) rb.velocity = externalForce + transform.forward * moveSpeed;
+        if (direction == Vector3.zero) rb.velocity = externalForce + transform.forward * moveSpeed;
         else rb.velocity = externalForce + direction * moveSpeed;
 
     }
@@ -73,7 +86,7 @@ public class BasicEnemy : MonoBehaviour
         if (collision.gameObject.tag.Contains("Wall"))
         {
             Bounce(collision.contacts[0].normal);
-            //Debug.Log("colidiu com : " + collision.gameObject.name);
+            Debug.Log("colidiu com : " + collision.gameObject.name);
         }
         else if (collision.gameObject.tag.Contains("Player"))
         {
@@ -92,6 +105,15 @@ public class BasicEnemy : MonoBehaviour
             Debug.Log("colidiu com : " + collision.gameObject.name);
         }
     }
+
+    //private void OnCollisionStay(Collision collision)
+    //{
+    //    if (collision.gameObject.tag.Contains("Wall"))
+    //    {
+    //        Bounce(collision.contacts[0].normal);
+    //        Debug.Log("colidiu com : " + collision.gameObject.name);
+    //    }
+    //}
 
     private void OnTriggerEnter(Collider other)
     {
@@ -119,8 +141,10 @@ public class BasicEnemy : MonoBehaviour
         {
             Debug.Log("tomei dnao");
             currentHealth -= damage;
-            if(currentHealth > 0) m_animator.SetTrigger("takeDamage");
+            if (currentHealth > 0) m_animator.SetTrigger("takeDamage");
             externalForce += ImpactValue;
+            gameManager.StopTime(0.25f, 10, 0f);
+            StartCoroutine(gameManager.CamShake(0.05f));
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
             {

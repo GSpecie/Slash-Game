@@ -65,7 +65,9 @@
     <Compile Include="Assets\Scripts\AirBullet.cs" />
     <Compile Include="Assets\Scripts\BasicEnemy.cs" />
     <Compile Include="Assets\Scripts\ContinueMenu.cs" />
+    <Compile Include="Assets\Scripts\EnemyBullet.cs" />
     <Compile Include="Assets\Scripts\EnemyChaser.cs" />
+    <Compile Include="Assets\Scripts\EnemyShooter.cs" />
     <Compile Include="Assets\Scripts\MainMenu.cs" />
     <Compile Include="Assets\Scripts\OrtographicResolution.cs" />
     <Compile Include="Assets\Scripts\PauseMenu.cs" />
@@ -74,6 +76,7 @@
     <Compile Include="Assets\Scripts\PlayerWeapon.cs" />
     <Compile Include="Assets\Scripts\ScoreGameManager.cs" />
     <Compile Include="Assets\Scripts\SettingsMenu.cs" />
+    <Compile Include="Assets\Scripts\SpawnPoint.cs" />
     <Compile Include="Assets\Scripts\Swipe.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Made With Github/Slash-Game/Slash game/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>

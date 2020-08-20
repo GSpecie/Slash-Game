@@ -8,6 +8,7 @@ TagManager:
   - Wall
   - UserWeapon
   - AirBullet
+  - EnemyBullet
   layers:
   - Default
   - TransparentFX

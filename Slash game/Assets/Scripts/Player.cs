@@ -8,6 +8,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Swipe swipeControls;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private float moveSpeed = 2;
+    private float moveSpeedStored;
     private Vector3 direction;
 
     [SerializeField] private PlayerWeapon m_playerWeapon;
@@ -166,16 +167,21 @@ public class Player : MonoBehaviour
             gameManager.ComboBreak();
             if(currentHealth > 0) m_animatorWrapper.TakeDamageTrigger();
             externalForce += impactValue;
+            //effects
+            gameManager.StopTime(0.05f, 10, 0.1f);
+            StartCoroutine(gameManager.CamShake(0.2f));
             lastDamageTime = Time.time;
             if (currentHealth <= 0)
             {
+                moveSpeedStored = moveSpeed;
+                moveSpeed = 0;
                 m_animatorWrapper.DeathTrigger();
                 myCollider.enabled = false;
                 isDead = true;
                 currentHealth = 0;
                 lifeText.text = currentHealth.ToString("0");
 
-                gameManager.EnableContinueScreen();
+                StartCoroutine(waitToCallContinue());
 
                 //die
             }
@@ -185,6 +191,7 @@ public class Player : MonoBehaviour
     public void Revive()
     {
         myCollider.enabled = true;
+        moveSpeed = moveSpeedStored;
         isDead = false;
         currentHealth = 20;
         lifeText.text = currentHealth.ToString("0");
@@ -234,5 +241,11 @@ public class Player : MonoBehaviour
         airBullets[airBulletIndex].gameObject.SetActive(true);
         airBulletIndex++;
         if (airBulletIndex == airBullets.Length - 1) airBulletIndex = 0;
+    }
+
+    IEnumerator waitToCallContinue()
+    {
+        yield return new WaitForSecondsRealtime(3f);
+        gameManager.EnableContinueScreen();
     }
 }

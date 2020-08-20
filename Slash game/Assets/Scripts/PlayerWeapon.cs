@@ -43,12 +43,12 @@ public class PlayerWeapon : MonoBehaviour
         else m_myCol.enabled = false;
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Enemy")
-        {
-            m_player.CreateImpact(other.gameObject.transform.position - m_player.gameObject.transform.position * playerRecoil);
-            //other.gameObject.GetComponent<BasicEnemy>().TakeDamage(1, (other.gameObject.transform.position - transform.position).normalized * impactIntensity);
-        }
-    }
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    if (other.gameObject.tag == "Enemy")
+    //    {
+    //        m_player.CreateImpact(other.gameObject.transform.position - m_player.gameObject.transform.position * playerRecoil);
+    //        //other.gameObject.GetComponent<BasicEnemy>().TakeDamage(1, (other.gameObject.transform.position - transform.position).normalized * impactIntensity);
+    //    }
+    //}
 }
